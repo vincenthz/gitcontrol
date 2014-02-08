@@ -14,13 +14,23 @@ Homepage:            http://github.com/vincenthz/gitcontrol
 Cabal-Version:       >=1.8
 data-files:          README.md
 
-Executable           gitcontrol
+Executable           gitcontrol-shell
   Main-Is:           GitControl.hs
   ghc-options:       -Wall -fno-warn-missing-signatures
   Hs-Source-Dirs:    src
   Build-depends:     base >= 4 && < 5
+                   , unix
+                   , hslogger
+                   , bytestring
+                   , gitcontrol
+
+library
+  exposed-modules:   System.GitControl.Shell
+  ghc-options:       -Wall -fno-warn-missing-signatures
+  build-depends:     base >=4 && < 5
                    , bytestring
 
+  -- Base language which the package is written in.
 --Test-Suite test-gitcontrol
 --  type:              exitcode-stdio-1.0
 --  hs-source-dirs:    tests
