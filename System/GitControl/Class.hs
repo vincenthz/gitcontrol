@@ -4,4 +4,4 @@ module System.GitControl.Class
 import System.GitControl.Types
 
 class GitControl c where
-    hasRight :: c -> Username -> RepositoryPath -> AccessMode -> IO Bool
+    isAuthorized :: c -> Username -> RepositoryPath -> AccessMode -> IO Bool

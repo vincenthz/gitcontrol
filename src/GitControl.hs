@@ -1,31 +1,47 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Control.Monad.IO.Class (liftIO)
+{-# LANGUAGE FlexibleInstances #-}
+module Main where
 
-import Data.ByteString.Char8 (ByteString)
+import Data.List
+import qualified Data.ByteString.Char8 as BS
 import System.Posix.Env.ByteString
-import System.Posix.Process.ByteString
+import System.Posix.Files.ByteString
 
-import System.GitControl.Shell
-import qualified System.GitControl.Class as DB
-import qualified System.GitControl.Types as DB
-import qualified System.GitControl.Dummy as DB
+import System.GitControl
 
-findIn :: ByteString -> [(ByteString, ByteString)] -> Maybe ByteString
-findIn _   []         = Nothing
-findIn key ((k,c):xs) = if (key == k) then Just c else findIn key xs
+data Entity = Entity
+    { userName :: Username
+    , repoName :: RepositoryPath
+    , priv     :: AccessMode
+    } deriving (Show,Read,Eq)
 
-main = do
-    args <- getArgs
-    case args of
-        [user] -> authUser user
-        _      -> error "invalid command line"
-  where authUser userName = do
-            envs <- getEnvironment
-            case findIn "SSH_ORIGINAL_COMMAND" envs of
-                Nothing   -> Prelude.putStrLn "error, command not found"
-                Just ocmd -> do let theCmd = commandLineParser ocmd
-                                db <- liftIO $ DB.getPersistent :: IO [DB.Entity]
-                                isAuth <- DB.hasRight db (DB.Username userName) (DB.RepositoryPath $ head $ gitCmdArgs theCmd) DB.AccessRead
-                                case isAuth of
-                                    False -> error $ "not authorized user: " ++ (show userName)
-                                    True  -> executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)
+getSerializedPath :: IO (Maybe BS.ByteString)
+getSerializedPath = do home <- getEnv "HOME"
+                       return $ case home of
+                           Nothing -> Nothing
+                           Just h  -> Just $ BS.concat [h,"/.git.control"]
+
+getPersistent :: IO [Entity]
+getPersistent = do
+    serializedFilePath <- getSerializedPath
+    case serializedFilePath of
+        Nothing   -> return []
+        Just path -> do
+            exist <- fileExist path
+            if exist then do serialized <- readFile $ BS.unpack path
+                             return $ read serialized
+                     else return []
+setPersistent xs = do
+    serializedFilePath <- getSerializedPath
+    case serializedFilePath of
+        Nothing   -> return ()
+        Just path -> writeFile (BS.unpack path) $ read xs
+
+instance GitControl [Entity] where
+    isAuthorized xs uName rName aMode =
+        let e = find (\t -> ((userName t) == uName) && ((repoName t) == rName)) xs
+        in case e of
+            Nothing -> return False
+            Just p  -> return $ aMode == (priv p) || (priv p) == AccessWrite
+
+main = defaultMain getPersistent
