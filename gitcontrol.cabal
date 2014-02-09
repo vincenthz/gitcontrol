@@ -26,6 +26,7 @@ Executable           gitcontrol-shell
 
 library
   exposed-modules:   System.GitControl.Shell
+                     System.GitControl.Types
                      System.GitControl.Class
                      System.GitControl
   ghc-options:       -Wall -fno-warn-missing-signatures

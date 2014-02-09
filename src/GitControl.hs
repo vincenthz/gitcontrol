@@ -7,6 +7,7 @@ import System.Posix.Process.ByteString
 
 import System.GitControl.Shell
 import qualified System.GitControl.Class as DB
+import qualified System.GitControl.Types as DB
 import qualified System.GitControl as DB
 
 findIn :: ByteString -> [(ByteString, ByteString)] -> Maybe ByteString
@@ -23,7 +24,8 @@ main = do
             case findIn "SSH_ORIGINAL_COMMAND" envs of
                 Nothing   -> Prelude.putStrLn "error, command not found"
                 Just ocmd -> do let theCmd = commandLineParser ocmd
-                                db <- liftIO $ DB.init :: IO [DB.Entity]
-                                case DB.member (\(DB.Entity _ n) -> n == userName) db of
-                                    Nothing -> error $ "not authorized user: " ++ (unpack userName)
-                                    Just _  -> executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)
+                                db <- liftIO $ DB.getPersistent :: IO [DB.Entity]
+                                isAuth <- DB.hasRight db userName (Prelude.head $ gitCmdArgs theCmd) DB.AccessRead
+                                case isAuth of
+                                    False -> error $ "not authorized user: " ++ (unpack userName)
+                                    True  -> executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)
