@@ -41,4 +41,6 @@ instance GitControl [Entity] where
             Just (Entity _ _ None)  -> return False
             Just (Entity _ _ right) -> return $ aMode <= right
 
-main = defaultMain getPersistent
+main :: IO ()
+main = (maybe (error "no HOME defined") (flip BS.append "/")) `fmap` getEnv "HOME"
+   >>= \h -> defaultMain h getPersistent
