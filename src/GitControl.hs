@@ -8,7 +8,7 @@ import System.Posix.Process.ByteString
 import System.GitControl.Shell
 import qualified System.GitControl.Class as DB
 import qualified System.GitControl.Types as DB
-import qualified System.GitControl as DB
+import qualified System.GitControl.Dummy as DB
 
 findIn :: ByteString -> [(ByteString, ByteString)] -> Maybe ByteString
 findIn _   []         = Nothing

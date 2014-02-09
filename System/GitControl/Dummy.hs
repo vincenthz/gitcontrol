@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-module System.GitControl
+module System.GitControl.Dummy
     where
 
 import System.GitControl.Types
