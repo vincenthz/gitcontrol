@@ -2,12 +2,18 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Main where
 
-import Data.List
+import Control.Applicative
 import qualified Data.ByteString.Char8 as BS
 import System.Posix.Env.ByteString
-import System.Posix.Files.ByteString
 
 import System.GitControl
+
+import Data.List
+import qualified Data.Map as M
+
+-- format of the file:
+--
+-- user:repo:access
 
 data Entity = Entity
     { userName :: Username
@@ -15,32 +21,31 @@ data Entity = Entity
     , priv     :: AccessMode
     } deriving (Show,Read,Eq)
 
-getSerializedPath :: IO (Maybe BS.ByteString)
-getSerializedPath = do home <- getEnv "HOME"
-                       return $ case home of
-                           Nothing -> Nothing
-                           Just h  -> Just $ BS.concat [h,"/.git.control"]
+getPath :: IO BS.ByteString
+getPath = maybe (error "no HOME defined") (flip BS.append "/gitcontrol") `fmap` getEnv "HOME"
 
-getPersistent :: IO [Entity]
-getPersistent = do
-    serializedFilePath <- getSerializedPath
-    case serializedFilePath of
-        Nothing   -> return []
-        Just path -> do
-            exist <- fileExist path
-            if exist then do serialized <- readFile $ BS.unpack path
-                             return $ read serialized
-                     else return []
+getDb :: IO Db
+getDb = do
+    path <- BS.unpack <$> getPath
+    Db . foldl' doAcc M.empty . BS.lines <$> BS.readFile path
+  where doAcc acc bs =
+            case BS.split ':' bs of
+                [user,repo,"r"] -> add acc AccessRead user repo
+                [user,repo,"w"] -> add acc AccessWrite user repo
+                _               -> acc
+        add acc access user repo
+            | BS.length user > 0 && BS.length repo > 0 = M.insert (Username user, RepositoryPath repo) access acc
+            | otherwise                                = acc
 
-instance GitControl [Entity] where
-    isAuthorized _  _     _     None  = return False
-    isAuthorized xs uName rName aMode =
-        let e = find (\t -> ((userName t) == uName) && ((repoName t) == rName)) xs
-        in case e of
-            Nothing                 -> return False
-            Just (Entity _ _ None)  -> return False
-            Just (Entity _ _ right) -> return $ aMode <= right
+newtype Db = Db (M.Map (Username, RepositoryPath) AccessMode)
+
+instance GitControl Db where
+    isAuthorized _      _     _     None  = return False
+    isAuthorized (Db m) uName rName aMode =
+        case M.lookup (uName,rName) m of
+            Nothing    -> return False
+            Just right -> return $ aMode <= right
 
 main :: IO ()
 main = (maybe (error "no HOME defined") (flip BS.append "/")) `fmap` getEnv "HOME"
-   >>= \h -> defaultMain h getPersistent
+   >>= \h -> defaultMain h getDb

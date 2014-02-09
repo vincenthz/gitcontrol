@@ -22,7 +22,7 @@ Executable           gitcontrol-shell
                    , unix
                    , bytestring
                    , gitcontrol
-                   , transformers
+                   , containers
 
 library
   exposed-modules:   System.GitControl

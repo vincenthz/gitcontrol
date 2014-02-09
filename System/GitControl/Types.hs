@@ -17,10 +17,10 @@ instance Ord AccessMode where
     compare AccessWrite AccessWrite = EQ
 
 newtype Username = Username ByteString
-    deriving (Show,Read,Eq)
+    deriving (Show,Read,Eq,Ord)
 
 newtype RepositoryPath = RepositoryPath ByteString
-    deriving (Show,Read,Eq)
+    deriving (Show,Read,Eq,Ord)
 
 instance Byteable RepositoryPath where
     toBytes (RepositoryPath p) = p
