@@ -14,10 +14,7 @@ data Entity = Entity
     { userName :: BS.ByteString
     , repoName :: BS.ByteString
     , priv     :: AccessMode
-    } deriving (Show,Read)
-instance Eq Entity where
-    e1 == e2 = ((userName e1) == (userName e2)) &&
-               ((repoName e1) == (repoName e2))
+    } deriving (Show,Read,Eq)
 
 getSerializedPath :: IO (Maybe BS.ByteString)
 getSerializedPath = do home <- getEnv "HOME"
