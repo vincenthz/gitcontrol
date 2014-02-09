@@ -35,7 +35,7 @@ setPersistent xs = do
     serializedFilePath <- getSerializedPath
     case serializedFilePath of
         Nothing   -> return ()
-        Just path -> writeFile (BS.unpack path) $ read xs
+        Just path -> writeFile (BS.unpack path) $ show xs
 
 instance GitControl [Entity] where
     isAuthorized _  _     _     None  = return False
