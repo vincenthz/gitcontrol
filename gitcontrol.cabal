@@ -23,11 +23,15 @@ Executable           gitcontrol-shell
                    , hslogger
                    , bytestring
                    , gitcontrol
+                   , transformers
 
 library
   exposed-modules:   System.GitControl.Shell
+                     System.GitControl.Class
+                     System.GitControl
   ghc-options:       -Wall -fno-warn-missing-signatures
   build-depends:     base >=4 && < 5
+                   , unix
                    , bytestring
 
   -- Base language which the package is written in.
