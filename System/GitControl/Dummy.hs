@@ -11,8 +11,8 @@ import System.Posix.Env.ByteString
 import System.Posix.Files.ByteString
 
 data Entity = Entity
-    { userName :: BS.ByteString
-    , repoName :: BS.ByteString
+    { userName :: Username
+    , repoName :: RepositoryPath
     , priv     :: AccessMode
     } deriving (Show,Read,Eq)
 

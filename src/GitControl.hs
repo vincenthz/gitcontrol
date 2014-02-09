@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Control.Monad.IO.Class (liftIO)
 
-import Data.ByteString.Char8
+import Data.ByteString.Char8 (ByteString)
 import System.Posix.Env.ByteString
 import System.Posix.Process.ByteString
 
@@ -25,7 +25,7 @@ main = do
                 Nothing   -> Prelude.putStrLn "error, command not found"
                 Just ocmd -> do let theCmd = commandLineParser ocmd
                                 db <- liftIO $ DB.getPersistent :: IO [DB.Entity]
-                                isAuth <- DB.hasRight db userName (Prelude.head $ gitCmdArgs theCmd) DB.AccessRead
+                                isAuth <- DB.hasRight db (DB.Username userName) (DB.RepositoryPath $ head $ gitCmdArgs theCmd) DB.AccessRead
                                 case isAuth of
-                                    False -> error $ "not authorized user: " ++ (unpack userName)
+                                    False -> error $ "not authorized user: " ++ (show userName)
                                     True  -> executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)

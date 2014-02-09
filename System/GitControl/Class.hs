@@ -1,8 +1,7 @@
 module System.GitControl.Class
     where
 
-import Data.ByteString (ByteString)
-import System.GitControl.Types (AccessMode)
+import System.GitControl.Types
 
 class GitControl c where
-    hasRight :: c -> ByteString -> ByteString -> AccessMode -> IO Bool
+    hasRight :: c -> Username -> RepositoryPath -> AccessMode -> IO Bool
