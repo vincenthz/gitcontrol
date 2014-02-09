@@ -19,23 +19,26 @@ import System.GitControl.Shell
 import System.GitControl.Class
 import System.GitControl.Types
 
-defaultMain :: GitControl a => IO a -> IO ()
+import Data.Byteable
+
+defaultMain :: GitControl a
+            => IO a   -- ^ initialize a git control backend
+            -> IO ()
 defaultMain dbGet = do
     args <- getArgs
     case args of
-        [user] -> authUser user
+        [user] -> authUser $ Username user
         _      -> error "invalid command line"
   where authUser userName = do
             envs <- getEnvironment
             case lookup "SSH_ORIGINAL_COMMAND" envs of
                 Nothing   -> error "SSH_ORIGINAL_COMMAND not found"
-                Just ocmd -> do let theCmd = commandLineParser ocmd
-                                db         <- dbGet
-                                authorized <- isAuthorized db
-                                                           (Username userName)
-                                                           (RepositoryPath $ head $ gitCmdArgs theCmd)
-                                                           (accessMode theCmd)
-                                -- TODO sanitize command, args..
-                                if authorized
-                                    then executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)
-                                    else exitFailure
+                Just ocmd -> either doFailure (doCheck envs userName) $ commandParse ocmd
+        doFailure _ = exitFailure
+        doCheck envs user cmd = do
+            db         <- dbGet
+            authorized <- isAuthorized db user (getCommandRepository cmd) (commandToAccess cmd)
+            -- TODO sanitize command, args..
+            if authorized
+                then executeFile (commandToRaw cmd) True [toBytes $ getCommandRepository cmd] (Just envs)
+                else exitFailure
