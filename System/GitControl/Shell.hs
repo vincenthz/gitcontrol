@@ -20,6 +20,40 @@ gitReceivePackStr, gitUploadPackStr :: ByteString
 gitReceivePackStr = "git-receive-pack "
 gitUploadPackStr  = "git-upload-pack "
 
+data HasDDot = NoDDot
+             | MaybeDDot
+             | HasDDot
+             deriving (Eq)
+
+-- | create a new repository path with the following contraints:
+--
+-- * length between 1 and 1024
+-- * not starting by '/' or '.'
+-- * only 1 '/' separator
+-- * no ".."
+-- * no unicode character
+repositoryPath :: ByteString -> Either String RepositoryPath
+repositoryPath path
+    | B.length path == 0   = Left "empty path"
+    | B.length path > 1024 = Left "big path"
+    | B.head path == sepW8 = Left "start by separator"
+    | B.head path == dotW8 = Left "start by dot"
+    | B.last path == sepW8 = Left "end by separator"
+    | numberOfSeps /= 1    = Left "0 or more than 1 separators"
+    | numberOfUnicodes > 0 = Left "unicode character"
+    | containsParent       = Left "parent in repository path"
+    | otherwise            = Right $ RepositoryPath path
+  where dotW8 = fromIntegral $ fromEnum '.'
+        sepW8 = fromIntegral $ fromEnum '/'
+        numberOfUnicodes = B.foldl' (\acc w -> acc + (if w > 0x7f then 1 else 0)) 0 path :: Int
+        numberOfSeps   = B.foldl' (\acc w -> acc + (if w == sepW8 then 1 else 0)) 0 path :: Int
+        containsParent = B.foldl' acc NoDDot path == HasDDot
+          where acc HasDDot _ = HasDDot
+                acc MaybeDDot v | v == dotW8 = HasDDot
+                                | otherwise  = NoDDot
+                acc NoDDot v | v == dotW8 = MaybeDDot
+                             | otherwise  = NoDDot
+
 commandParse :: ByteString -> Either String GitCommand
 commandParse bs
     | gitReceivePackStr `B.isPrefixOf` bs = ReceivePack `fmapE` (getRepositoryPath $ B.drop (B.length gitReceivePackStr) bs)
@@ -29,11 +63,11 @@ commandParse bs
             | B.length b < 1      = Left "no path specified"
             | B.head b == quoteW8 = let (path, r) = getPathAndRem (B.drop 1 b)
                                      in case r of
-                                            "\'" -> Right $ RepositoryPath path
+                                            "\'" -> repositoryPath path
                                             _    -> Left "bad path specification"
             | otherwise           =  let (path, r) = getPathAndRem b
                                       in case r of
-                                            "" -> Right $ RepositoryPath path
+                                            "" -> repositoryPath path
                                             _  -> Left "bad path specification"
         getPathAndRem = B.break (\c -> c <= 0x20 || c == quoteW8)
         quoteW8 = fromIntegral $ fromEnum '\''
