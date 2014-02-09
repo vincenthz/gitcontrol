@@ -1,6 +1,7 @@
 module System.GitControl.Types where
 
 import Data.ByteString (ByteString)
+import Data.Byteable
 
 data AccessMode = None | AccessRead | AccessWrite
     deriving (Show, Read, Eq)
@@ -20,3 +21,6 @@ newtype Username = Username ByteString
 
 newtype RepositoryPath = RepositoryPath ByteString
     deriving (Show,Read,Eq)
+
+instance Byteable RepositoryPath where
+    toBytes (RepositoryPath p) = p
