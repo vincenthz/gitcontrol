@@ -38,10 +38,12 @@ setPersistent xs = do
         Just path -> writeFile (BS.unpack path) $ read xs
 
 instance GitControl [Entity] where
+    isAuthorized _  _     _     None  = return False
     isAuthorized xs uName rName aMode =
         let e = find (\t -> ((userName t) == uName) && ((repoName t) == rName)) xs
         in case e of
-            Nothing -> return False
-            Just p  -> return $ aMode == (priv p) || (priv p) == AccessWrite
+            Nothing                 -> return False
+            Just (Entity _ _ None)  -> return False
+            Just (Entity _ _ right) -> return $ aMode <= right
 
 main = defaultMain getPersistent

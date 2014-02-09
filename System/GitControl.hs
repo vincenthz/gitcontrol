@@ -31,7 +31,10 @@ defaultMain dbGet = do
             case lookup "SSH_ORIGINAL_COMMAND" envs of
                 Nothing   -> putStrLn "error, command not found"
                 Just ocmd -> do let theCmd = commandLineParser ocmd
-                                authorized <- isAuthorized db (Username userName) (RepositoryPath $ head $ gitCmdArgs theCmd) AccessRead
+                                authorized <- isAuthorized db
+                                                           (Username userName)
+                                                           (RepositoryPath $ head $ gitCmdArgs theCmd)
+                                                           (accessMode theCmd)
                                 -- TODO sanitize command, args..
                                 if authorized
                                     then executeFile (gitCmd theCmd) True (gitCmdArgs theCmd) (Just envs)
