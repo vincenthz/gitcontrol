@@ -20,7 +20,6 @@ Executable           gitcontrol-shell
   Hs-Source-Dirs:    src
   Build-depends:     base >= 4 && < 5
                    , unix
-                   , hslogger
                    , bytestring
                    , gitcontrol
                    , transformers
