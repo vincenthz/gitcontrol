@@ -46,5 +46,7 @@ defaultMain repoRoot getBackend
             authorized <- isAuthorized backend user (getCommandRepository cmd) (commandToAccess cmd)
             -- TODO sanitize envs ?
             if authorized
-                then executeFile (commandToRaw cmd) True [repoRoot `B.append` (toBytes $ getCommandRepository cmd)] (Just envs)
+                then let rcmd = commandToRaw cmd
+                         args = [repoRoot `B.append` (toBytes $ getCommandRepository cmd)]
+                      in executeFile rcmd True args (Just envs)
                 else exitFailure

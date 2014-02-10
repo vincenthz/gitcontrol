@@ -81,5 +81,5 @@ commandToAccess (ReceivePack _) = AccessRead
 commandToAccess (UploadPack _)  = AccessWrite
 
 commandToRaw :: GitCommand -> ByteString
-commandToRaw (ReceivePack _) = gitReceivePackStr
-commandToRaw (UploadPack _)  = gitUploadPackStr
+commandToRaw (ReceivePack _) = B.init gitReceivePackStr
+commandToRaw (UploadPack _)  = B.init gitUploadPackStr
