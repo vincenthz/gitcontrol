@@ -28,7 +28,7 @@ data HasDDot = NoDDot
 -- | create a new repository path with the following contraints:
 --
 -- * length between 1 and 1024
--- * not starting by '/' or '.'
+-- * not starting by '/' or '.' or '~'
 -- * only 1 '/' separator
 -- * no ".."
 -- * no unicode character
@@ -36,6 +36,7 @@ repositoryPath :: ByteString -> Either String RepositoryPath
 repositoryPath path
     | B.length path == 0   = Left "empty path"
     | B.length path > 1024 = Left "big path"
+    | B.head path == tilW8 = Left "start by tilde"
     | B.head path == sepW8 = Left "start by separator"
     | B.head path == dotW8 = Left "start by dot"
     | B.last path == sepW8 = Left "end by separator"
@@ -45,6 +46,7 @@ repositoryPath path
     | otherwise            = Right $ RepositoryPath path
   where dotW8 = fromIntegral $ fromEnum '.'
         sepW8 = fromIntegral $ fromEnum '/'
+        tilW8 = fromIntegral $ fromEnum '~'
         numberOfUnicodes = B.foldl' (\acc w -> acc + (if w > 0x7f then 1 else 0)) 0 path :: Int
         numberOfSeps   = B.foldl' (\acc w -> acc + (if w == sepW8 then 1 else 0)) 0 path :: Int
         containsParent = B.foldl' acc NoDDot path == HasDDot
