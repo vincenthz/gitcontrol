@@ -15,12 +15,6 @@ import qualified Data.Map as M
 --
 -- user:repo:access
 
-data Entity = Entity
-    { userName :: Username
-    , repoName :: RepositoryPath
-    , priv     :: AccessMode
-    } deriving (Show,Read,Eq)
-
 getPath :: IO BS.ByteString
 getPath = maybe (error "no HOME defined") (flip BS.append "/gitcontrol") `fmap` getEnv "HOME"
 
