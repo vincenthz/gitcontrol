@@ -21,7 +21,6 @@ import System.GitControl.Types
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Byteable
 
 defaultMain :: GitControl a
             => ByteString -- ^ repository root directory, automatically appended to the queried repository
@@ -47,6 +46,6 @@ defaultMain repoRoot getBackend
             -- TODO sanitize envs ?
             if authorized
                 then let rcmd = commandToRaw cmd
-                         args = [repoRoot `B.append` (toBytes $ getCommandRepository cmd)]
+                         args = [repoRoot `B.append` (getRepositoryPathAsBytes $ getCommandRepository cmd)]
                       in executeFile rcmd True args (Just envs)
                 else exitFailure
